@@ -8,7 +8,7 @@
 ESPert espert;
 elapsedMillis timeElapsed;
 // delay in milliseconds before Break Time Mode is activated
-unsigned int interval = 3600000; //Every hour (interval is in milliseconds)
+unsigned long interval = 3600000; //Every hour (interval is in milliseconds)
 
 int val; //value of the blue pin to make it flash
 bool isBusy = false; //BUSY = RED mode, Else GREEN mode
@@ -51,9 +51,25 @@ void loop() {
 
 //Change the Color of our LED, RGB, 0 to 255
 void changeColor(int red, int green , int blue){
-  analogWrite( RED, red );
-  analogWrite( GREEN, green );
-  analogWrite( BLUE, blue );
+  // If 255, led is brighter when using digitalWrite (less voltage drop) so use digitalWrite when possible
+  if (red > 0 && red < 255) {
+    analogWrite(RED, red);
+  }
+  else{
+    digitalWrite(RED, red > 0);
+  }
+  if (green > 0 && green < 255) {
+    analogWrite(GREEN, green);
+  }
+  else {
+    analogWrite(GREEN, green > 0 );
+  }
+  if (blue > 0 && blue < 255) {
+    analogWrite(BLUE, blue);
+  }
+  else {
+    analogWrite(BLUE, blue > 0 );
+  }
 }
 
 //Check if we in busy mode or not
