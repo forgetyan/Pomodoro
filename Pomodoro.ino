@@ -1,32 +1,36 @@
 #include <elapsedMillis.h>
 
-#define RED_PIN 3  //PIN NUMBER THAT CONTROL THE RED COLOR OF OUR LED
-#define GREEN_PIN 4  //PIN NUMBER THAT CONTROL THE GREEN COLOR OF OUR LED
-#define BLUE_PIN 5  //PIN NUMBER THAT CONTROL THE BLUE COLOR OF OUR LED
-#define BUTTON_PIN 13  //INPUT PIN NUMBER FOR THE BUTTON
+#define RED_PIN 3  // PIN NUMBER THAT CONTROL THE RED COLOR OF OUR LED
+#define GREEN_PIN 4  // PIN NUMBER THAT CONTROL THE GREEN COLOR OF OUR LED
+#define BLUE_PIN 5  // PIN NUMBER THAT CONTROL THE BLUE COLOR OF OUR LED
+#define BUTTON_PIN 13  // INPUT PIN NUMBER FOR THE BUTTON
+
+#define INTERVAL_BEFORE_BREAK_TIME 3000 //3600000; // Every hour (interval is in milliseconds)
+#define BREAK_TIME_LENGTH 10000 // in milliseconds
+#define BLUE_LED_BLINK_SPEED 500 // in milliseconds
 
 //ESPert espert;
 elapsedMillis timeElapsed;
-// delay in milliseconds before Break Time Mode is activated
-unsigned long interval = 3000;//3600000; //Every hour (interval is in milliseconds)
 
-int val; //value of the blue pin to make it flash
-bool isBusy = false; //BUSY = RED mode, Else GREEN mode
+bool isBusy = false; // BUSY = RED mode, Else GREEN mode
 bool lastButtonPressed = 0;
 bool isInTimeOutMode = 0;
 unsigned long timeoutEndTime = 0;
 unsigned long nextBlueChange = 0;
 unsigned long nextValidButtonPress = 0;
+unsigned long nextBreakTime = 0;
 bool isBlueOn = false;
 
 void setup() {
+  // Prepare Serial in case we want to log
   Serial.begin(9600);
-  //SETUP OUR PINS
+  // SETUP OUR PINS
   pinMode(BUTTON_PIN, INPUT);
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
   pinMode(RED_PIN, OUTPUT);
   checkLightMode();  //Init our LED
+  nextBreakTime = INTERVAL_BEFORE_BREAK_TIME;
 }
 
 void loop() {
@@ -34,27 +38,27 @@ void loop() {
   unsigned long currentMillis = millis();
   if(!isInTimeOutMode) {
     if(buttonPressed){
-      isBusy = !isBusy; //That busy ?? u sure ?
-      //Switch between RED or GREEN Mode
+      isBusy = !isBusy; // That busy ?? u sure ?
+      // Switch between RED or GREEN Mode
       checkLightMode();
     }
-    //Break time - Time to train pipes!!
-    if (timeElapsed > interval)
+    // Break time - Time to train pipes!!
+    if (nextBreakTime < currentMillis)
     {
-      closeLight(); //reset light so we can flash in blue color
+      closeLight(); // reset light so we can flash in blue color
       isInTimeOutMode = true;
-      timeoutEndTime = currentMillis + 10000;
+      timeoutEndTime = currentMillis + BREAK_TIME_LENGTH;
     }
   }
   else
   {
-    //Flash in BLUE for 30 seconds : i * delay = 60 * 500 = 30000 milliseconds
+    // Flash in BLUE for 30 seconds : i * delay = 60 * 500 = 30000 milliseconds
     if(nextBlueChange < currentMillis)
     {
-      Serial.println("Change");
-      nextBlueChange = currentMillis + 500;
+      //Serial.println("Change");
+      nextBlueChange = currentMillis + BLUE_LED_BLINK_SPEED;
       isBlueOn = !isBlueOn;
-      Serial.println(isBlueOn);
+      //Serial.println(isBlueOn);
       if(isBlueOn){
         changeColor(0, 0, 255);
       }
@@ -64,15 +68,16 @@ void loop() {
       
     }
     if(buttonPressed || timeoutEndTime < currentMillis){
-      //A way to stop the break time and return to green or red light mode
+      // A way to stop the break time and return to green or red light mode
       isInTimeOutMode = 0;
       timeElapsed = 0;
       checkLightMode();
+      nextBreakTime = nextBreakTime + INTERVAL_BEFORE_BREAK_TIME;
     }
   }
 }
 
-//Change the Color of our LED, RGB, 0 to 255
+// Change the Color of our LED, RGB, 0 to 255
 void changeColor(int red, int green , int blue){
   // If 255, led is brighter when using digitalWrite (less voltage drop) so use digitalWrite when possible
   if (red > 0 && red < 255) {
@@ -95,26 +100,26 @@ void changeColor(int red, int green , int blue){
   }
 }
 
-//Check if we in busy mode or not
+// Check if we in busy mode or not
 void checkLightMode(){
   if (isBusy){
-    lightRed(); //RED mode - We are currently busy, please call again!
+    lightRed(); // RED mode - We are currently busy, please call again!
   }else{
-    lightGreen(); //Green mode - Hi, may i help you ?
+    lightGreen(); // Green mode - Hi, may i help you ?
   }
 }
 
-//Turn LED off
+// Turn LED off
 void closeLight(){
   changeColor(0,0,0);
 }
 
-//Turn LED red
+// Turn LED red
 void lightRed(){
   changeColor(255,0,0);
 }
 
-//Turn LED Green
+// Turn LED Green
 void lightGreen(){
   changeColor(0,255,0);
 }
