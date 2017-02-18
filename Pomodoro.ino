@@ -1,11 +1,12 @@
 #include <elapsedMillis.h>
+#include "WebServer.h"
 
 #define RED_PIN 3  // PIN NUMBER THAT CONTROL THE RED COLOR OF OUR LED
 #define GREEN_PIN 4  // PIN NUMBER THAT CONTROL THE GREEN COLOR OF OUR LED
 #define BLUE_PIN 5  // PIN NUMBER THAT CONTROL THE BLUE COLOR OF OUR LED
 #define BUTTON_PIN 13  // INPUT PIN NUMBER FOR THE BUTTON
 
-#define INTERVAL_BEFORE_BREAK_TIME 3000 //3600000; // Every hour (interval is in milliseconds)
+#define INTERVAL_BEFORE_BREAK_TIME 30000 //3600000; // Every hour (interval is in milliseconds)
 #define BREAK_TIME_LENGTH 10000 // in milliseconds
 #define BLUE_LED_BLINK_SPEED 500 // in milliseconds
 
@@ -20,6 +21,7 @@ unsigned long nextBlueChange = 0;
 unsigned long nextValidButtonPress = 0;
 unsigned long nextBreakTime = 0;
 bool isBlueOn = false;
+WebServer _webServer;
 
 void setup() {
   // Prepare Serial in case we want to log
@@ -31,9 +33,11 @@ void setup() {
   pinMode(RED_PIN, OUTPUT);
   checkLightMode();  //Init our LED
   nextBreakTime = INTERVAL_BEFORE_BREAK_TIME;
+  _webServer.start();
 }
 
 void loop() {
+  _webServer.loop();
   bool buttonPressed = checkButtonPressed();
   unsigned long currentMillis = millis();
   if(!isInTimeOutMode) {
